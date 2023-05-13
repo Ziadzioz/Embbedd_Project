@@ -1,3 +1,4 @@
+//lcd.c
 #include "tm4c123gh6pm.h"
 #include "LCD.h"
 #include "GPS.h"
