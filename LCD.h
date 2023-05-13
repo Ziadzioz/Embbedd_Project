@@ -11,7 +11,7 @@
 #define RS_ON      						0x20
 #define Beginning_1st_line		0x80
 
-//Functions
+//Functions 
 
  void LCD_sendCommand(char command);
 void LCD_data(char data);
