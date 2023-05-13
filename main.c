@@ -1,3 +1,4 @@
+#main.c
 #include "GPS.h"
 #include "tm4c123gh6pm.h"
 #include "bit_utilies.h"
