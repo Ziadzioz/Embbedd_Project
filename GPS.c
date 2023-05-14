@@ -13,12 +13,13 @@
 #include <stdio.h>
 #include "GPIO.h"
 #include "UART.h"
+
 const double PI = 3.14159265359 ;
 
-
+	char flag=1;
  char GPS_OUTPUT[80];
  char GPS_logname[]= "$GPRMC," ;  
- 
+ char receivedchar = 0;
   char *token;  
 char *Null; 
  char formated_GPS[12][20];
@@ -26,55 +27,52 @@ char *Null;
  char counter =0;
  int i;
 
+double currentlat ;
+double currentlong ;
 
-float To_RAD(float angle){     //convert to radian 
-   return ( angle* PI/180 );
+double TODEG(double number){
+
+return (int)(number/100)+( number-(int)(number/100)*100)/60.0;
 }
 
-  double Distance_calculate( double  current_lat , double current_long, double destination_lat,double destination_long){ //distance between two points
-		
-		
-  double current_long_rad = To_RAD(current_long);
-		
-  double current_lat_rad = To_RAD(current_lat);
-		
-  double  destination_lond_rad = To_RAD(destination_long);
+
+
+
+
+double degToRad(double angle){     //convert to radian 
+   return ( angle* PI/180 );
+}
+ 
+	double GPS_getDistance(double currentLat,double currentLong,double previousLat,double previousLong){
+    double lat1 = degToRad(currentLat);
+    double long1 = degToRad(currentLong);
+    double lat2 = degToRad(previousLat);
+    double long2 = degToRad(previousLong);
+    double latdiff = lat2 - lat1;
+    double longdiff = long2 - long1;
+
+    double a= pow(sin(latdiff/2),2)+cos(lat1)*cos(lat2)*pow(sin(longdiff/2),2); // Haversine formula: a = sin²(?f/2) + cos f1 · cos f2 · sin²(??/2)
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return 6371000*c;   //in meters
+}
 	
-  double destination_lat_rad= To_RAD(destination_lat);
-		
-		//difference 
-  double long_diff = current_long - destination_long;
-  double  lat_diff = current_lat - destination_lat ;
-		  
-		//calculations to return the distance
-		
-		
-  float a = pow (sin(lat_diff/2),2 ) + cos(current_lat_rad)*cos(destination_lat_rad)*pow(sin( long_diff/2),2);
-	
-  float  c = 2 *atan2(sqrt(a),sqrt(1-a));
-		return(6371000*c); 		
-	}
-	
-	
-	char data ;
+
 	char UART_GETCHAR(){              //get char 
 	while ((UART5_FR_R & UART_FR_RXFE)!= 0){}
 		
-				 data= GET_REG(UART5_DR_R);//&0xFF
-
-	return data;
+return GET_REG(UART5_DR_R);//&0xFF	
 	}
 	
 	
- void GPS_read (double position[2]){
+ void GPS_read (){
 
-char receivedchar = 0;
-	char flag=1;
+
+
 	do {
 		flag=1;
 		for( i=0 ; i<7 ;i++){
 		if (UART_GETCHAR()!= GPS_logname[i]){  //chect the correct logname of the GPSoutput 
-		flag=0;
+		flag=0; 
 			break;
 		}
 		}
@@ -95,22 +93,24 @@ char receivedchar = 0;
 	 }while(token != Null);                   //collect the output into 2D array
 	 
 
-	 if (strcmp(formated_GPS[1],"A")){
-		 if (strcmp(formated_GPS[3],"N")==0){
-			position[0] = atof(formated_GPS[2]);}
+	 if (strcmp(formated_GPS[1],"A"))
+		 {
+		 if (strcmp(formated_GPS[3],"N")==0)
+			 {
+		currentlat = atof(formated_GPS[2]);
+			 }
 		 else {
-			 position[0] = -atof(formated_GPS[2]);   
+				currentlat = -atof(formated_GPS[2]);   
 		 }
-		 if (strcmp(formated_GPS[5],"5")==0){
-	 position[1] = atof(formated_GPS[4]) ;}
+		 if (strcmp(formated_GPS[5],"5")==0)
+			 {
+ currentlong = atof(formated_GPS[4]) ;
+			 }
 		 else{
-		position[1]  = - atof(formated_GPS[4]);
+		currentlong = - atof(formated_GPS[4]);
 		 }
-	
+		
 	 }
-else {
- GPS_read (position);
+	 
  }
  
- }
-
